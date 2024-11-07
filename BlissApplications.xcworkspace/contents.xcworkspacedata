@@ -2,6 +2,12 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:AvatarCache+CoreDataClass.swift">
+   </FileRef>
+   <FileRef
+      location = "group:AvatarCache+CoreDataProperties.swift">
+   </FileRef>
+   <FileRef
       location = "group:EmojiCache+CoreDataClass.swift">
    </FileRef>
    <FileRef

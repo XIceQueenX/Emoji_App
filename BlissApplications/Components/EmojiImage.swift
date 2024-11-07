@@ -24,7 +24,6 @@ struct EmojiImage: View {
                 .font(.caption)
                 .foregroundColor(.gray)
         }
-        
     }
 }
 

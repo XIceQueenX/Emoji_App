@@ -9,10 +9,22 @@ import Foundation
 class EmojiListViewModel : ObservableObject{
     @Published var emojis = [EmojiData]()
     
+    @Published var searchText: String = ""
+
     private let persistenceController = PersistenceController.shared
     
     init(){
         loadEmojis()
+    }
+    
+    func getAvatar(){
+        Task {
+            do {
+                let a = try await getAvatarFromAPI(user: searchText)
+            } catch {
+                print("failed")
+            }
+        }
     }
     
     func loadEmojis() {
@@ -32,8 +44,4 @@ class EmojiListViewModel : ObservableObject{
         return emojis.randomElement()
     }
     
-    
-    func removeEmojiItem(index: Int){
-        
-    }
 }

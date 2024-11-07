@@ -19,12 +19,8 @@ struct RoundButton: View {
                 .font(.system(size: 16))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background( Color.clear )
+                .background(Color(.secondary))
                 .cornerRadius(24)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.white, lineWidth: 2)
-                )
                 .frame(height: 48)
         }
     }
@@ -33,5 +29,5 @@ struct RoundButton: View {
 #Preview {
     RoundButton(title: "hello",
                 action: {})
-    .background(Color.purple)
+    .background(Color(.accent))
 }
