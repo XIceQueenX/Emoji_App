@@ -10,6 +10,17 @@ import Foundation
 import CoreData
 import Alamofire
 
+struct EmojiData  {
+    var name: String
+    var imageData: Data?
+}
+
+public struct Emoji: Codable {
+    let identification: String
+    let url: String
+}
+
+
 class PersistenceController {
     static let shared = PersistenceController()
     
@@ -18,7 +29,6 @@ class PersistenceController {
     }
 
     let container: NSPersistentContainer
-    
     
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "BlissApplications")
@@ -44,20 +54,44 @@ class PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
     }
 
-     func fetchEmojisFromDatabase() -> [EmojiCache]? {
+    /*public func getEmojis() async throws -> [EmojiCache] {
+        if let localEmojis = fetchEmojisFromDatabase(), !localEmojis.isEmpty {
+            return localEmojis
+        }
+
+        let emojisFromCoreData = uploadEmojisToCoreData(emoji: try await getEmojisFromAPI())
+
+        return emojisFromCoreData ?? []
+    }*/
+    
+    public func getEmojis() async throws -> [EmojiData] {
+        // First try to fetch emojis from the local database (Core Data)
+        if let localEmojis = fetchEmojisFromDatabase(), !localEmojis.isEmpty {
+            // If emojis are found, map them to EmojiData and return
+            return localEmojis.map { EmojiData(name: $0.name ?? "", imageData: $0.url) }
+        }
+
+        let emojisFromAPI = try await getEmojisFromAPI()
+        
+        let emojisFromCoreData = uploadEmojisToCoreData(emoji: emojisFromAPI)
+        
+        return emojisFromCoreData?.map { EmojiData(name: $0.name ?? "", imageData: $0.url) } ?? []
+    }
+
+    public func fetchEmojisFromDatabase() -> [EmojiCache]? {
         let fetchRequest: NSFetchRequest<EmojiCache> = EmojiCache.fetchRequest()
 
         do {
             let emojiCaches = try context.fetch(fetchRequest)
             return emojiCaches
         } catch {
-            print("Erro retrieving emojis from core daqta")
+            print("Erro fetching emojis from core daqta")
 
             return nil
         }
     }
 
-    func uploadEmojisToCoreData(emoji: [Emoji]) -> [EmojiCache]? {
+    public func uploadEmojisToCoreData(emoji: [Emoji]) -> [EmojiCache]? {
         var emojis = [EmojiCache]()
         
         for emojiItem in emoji {
@@ -78,18 +112,6 @@ class PersistenceController {
         } catch {
             print("Erro uploading emojis to core daqta")
             return nil
-        }
-
-        return emojis
-    }
-
-    public func getEmojisFromAPI() async throws -> [Emoji]{
-        let response = try await AF.request("https://api.github.com/emojis")
-            .serializingDecodable([String: String].self)
-            .value
-        
-        let emojis = response.map { (key, value) -> Emoji in
-            return Emoji(identification: key, url: value)
         }
 
         return emojis

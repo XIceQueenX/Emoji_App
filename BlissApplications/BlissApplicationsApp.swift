@@ -9,12 +9,12 @@ import SwiftUI
 
 @main
 struct BlissApplicationsApp: App {
-    let persistenceController = PersistenceController.shared
+    
+    @StateObject private var emojiListViewModel = EmojiListViewModel()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            MainView(viewModel: emojiListViewModel)
         }
     }
 }
