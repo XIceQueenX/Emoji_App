@@ -2,7 +2,7 @@
 //  AvatarCache+CoreDataProperties.swift
 //  
 //
-//  Created by Gloria Martins on 07/11/2024.
+//  Created by Gloria Martins on 08/11/2024.
 //
 //
 
@@ -16,8 +16,8 @@ extension AvatarCache {
         return NSFetchRequest<AvatarCache>(entityName: "AvatarCache")
     }
 
-    @NSManaged public var login: String?
-    @NSManaged public var id: String?
     @NSManaged public var data: Data?
+    @NSManaged public var id: String?
+    @NSManaged public var login: String?
 
 }

@@ -2,16 +2,16 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:AvatarCache+CoreDataClass.swift">
+      location = "group:BlissApplications/Models/AvatarCache+CoreDataClass.swift">
    </FileRef>
    <FileRef
-      location = "group:AvatarCache+CoreDataProperties.swift">
+      location = "group:BlissApplications/Models/AvatarCache+CoreDataProperties.swift">
    </FileRef>
    <FileRef
-      location = "group:EmojiCache+CoreDataClass.swift">
+      location = "group:BlissApplications/Models/EmojiCache+CoreDataClass.swift">
    </FileRef>
    <FileRef
-      location = "group:EmojiCache+CoreDataProperties.swift">
+      location = "group:BlissApplications/Models/EmojiCache+CoreDataProperties.swift">
    </FileRef>
    <FileRef
       location = "group:BlissApplications.xcodeproj">
