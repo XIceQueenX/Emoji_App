@@ -8,65 +8,73 @@
 import Foundation
 import Alamofire
 
-public struct AvatarData: Decodable{
-    let login: String
-    let id: String
-    let data: Data?
-}
-
-public struct Avatar: Decodable{
+//Holds API Response
+public struct AvatarResponse: Decodable{
     let login: String
     let id: Int
     let avatar_url: String
 }
 
-struct Repository: Decodable, Identifiable {
+//Holds Repositories Response
+struct Repository: Decodable {
     var id: Int
     var full_name: String
     var `private`: Bool
 }
 
-func downloadImage(from url: URL) -> Data? {
+func downloadImage(from urlString: String) async -> Data? {
+    guard let url = URL(string: urlString) else {
+        return nil
+    }
+    
     do {
-        let data = try Data(contentsOf: url)
+        let (data, _) = try await URLSession.shared.data(from: url)
         return data
     } catch {
-        print("Failed to download image \(url) \(error)")
+        print("Failed downloadImage \(url)\(error.localizedDescription)")
         return nil
     }
 }
 
-//Chaged this to public
-public func getEmojisFromAPI() async throws -> [Emoji]{
-    let response = try await AF.request("https://api.github.com/emojis")
-        .serializingDecodable([String: String].self)
-        .value
-    
-    let emojis = response.map { (key, value) -> Emoji in
-        return Emoji(identification: key, url: value)
+
+func getEmojisFromAPI() async -> [String: Data]? {
+    do {
+        let response = try await AF.request("https://api.github.com/emojis")
+            .serializingDecodable([String: String].self)
+            .value
+        
+        var emojiDataDictionary = [String: Data]()
+        
+        for (key, value) in response {
+            if let imageData = await downloadImage(from: value) {
+                emojiDataDictionary[key] = imageData
+            } else {
+                print("Failed to download image for \(key)")
+            }
+        }
+        return emojiDataDictionary
+    } catch {
+        print("Failed getEmojisAPI\(error.localizedDescription)")
+        return nil
     }
-    
-    return emojis
 }
 
-func getAvatarFromAPI(user: String) async throws -> AvatarData? {
-    let response = try await AF.request("https://api.github.com/users/\(user)")
-        .serializingDecodable(Avatar.self)
-        .value
-    
-    let login = response.login
-    let id = response.id
-    let avatarUrlString = response.avatar_url
-    
-    let persistenceController = PersistenceController.shared
-    if let avatarUrl = URL(string: avatarUrlString) {
-        if let avatarData = await downloadImage(from: avatarUrl) {
-            print(avatarData)
-            
-            persistenceController.uploadAvatarToCoreData(emoji: AvatarData(login: login, id: String(id), data: avatarData))
+
+func getAvatarFromAPI(user: String) async {
+    do {
+        let response = try await AF.request("https://api.github.com/users/\(user)")
+            .serializingDecodable(AvatarResponse.self)
+            .value
+        
+        let avatarUrlString = response.avatar_url
+        
+        if let avatarData = await downloadImage(from: avatarUrlString) {
+            let persistenceController = PersistenceController.shared
+            persistenceController.uploadAvatarToCoreData(login: response.login, id: String(response.id), data: avatarData)
         }
+        
+    } catch {
+        print("Failed to get avatar from API: \(error.localizedDescription)")
     }
-    
-    return nil
 }
 

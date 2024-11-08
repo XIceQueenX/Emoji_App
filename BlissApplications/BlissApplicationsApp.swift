@@ -9,8 +9,7 @@ import SwiftUI
 
 @main
 struct BlissApplicationsApp: App {
-    
-    @StateObject private var emojiListViewModel = EmojiListViewModel()
+    @StateObject var emojiListViewModel = MainViewViewModel()
 
     var body: some Scene {
         WindowGroup {

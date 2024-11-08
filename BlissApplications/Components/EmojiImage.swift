@@ -6,21 +6,20 @@
 //
 
 import SwiftUI
-import SwiftUI
 
 struct EmojiImage: View {
-    let emoji: EmojiData
+    let emoji: EmojiCache
     let squareSize: CGFloat = 50
     
     var body: some View {
-        if let imageData = emoji.imageData, let uiImage = UIImage(data: imageData) {
+        if let imageData = emoji.url, let uiImage = UIImage(data: imageData) {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFill()
                 .frame(width: squareSize, height: squareSize)
                 .cornerRadius(8)
         } else {
-            Text("No image")
+            Text(emoji.name ?? "Name not found")
                 .font(.caption)
                 .foregroundColor(.gray)
         }
@@ -28,5 +27,5 @@ struct EmojiImage: View {
 }
 
 #Preview {
-    EmojiImage(emoji: EmojiData(name: "Heart", imageData: nil))
+    EmojiImage(emoji: EmojiCache(context: PersistenceController.preview.container.viewContext))
 }

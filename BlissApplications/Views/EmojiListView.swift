@@ -9,8 +9,8 @@ import SwiftUI
 import CoreData
 
 public struct EmojiListView: View {
-    @State var emojis: [EmojiData]
-    @Environment(\.dismiss) var dismiss
+    @State var emojis: [EmojiCache]
+    @Environment(\.dismiss) private var dismiss
     
     @State private var deletedItemIndices: [Int] = []
     
@@ -18,15 +18,12 @@ public struct EmojiListView: View {
     let numberOfColumns = 4
     
     var columns: [GridItem] {
-        var gridItems = [GridItem]()
-        for _ in 0..<numberOfColumns {
-            gridItems.append(GridItem(.flexible()))
-        }
-        return gridItems
+        Array(repeating: GridItem(.flexible()), count: numberOfColumns)
     }
     
     public var body: some View {
-        NavigationView {
+        ZStack {
+            Color(.background).ignoresSafeArea()
             ScrollView {
                 LazyVGrid(columns: self.columns) {
                     ForEach(emojis.indices, id: \.self) { index in
@@ -34,7 +31,6 @@ public struct EmojiListView: View {
                             Text("❌")
                                 .font(.system(size: 50))
                                 .frame(width: squareSize, height: squareSize)
-                                .background(Color.red.opacity(0.1))
                                 .cornerRadius(8)
                         } else {
                             EmojiImage(emoji: emojis[index])
@@ -48,12 +44,7 @@ public struct EmojiListView: View {
             .refreshable {
                 deletedItemIndices.removeAll()
             }.navigationTitle("Emoji List")
-                .navigationBarItems(leading: Button("Back") {
-                    dismiss()
-                })
-                .padding()
-            
-            
+            .padding()
         }
     }
     
@@ -63,9 +54,5 @@ public struct EmojiListView: View {
 }
 
 #Preview {
-    let emojis = [EmojiData(name: "Smile", imageData: nil),
-                  EmojiData(name: "Heart", imageData: nil)]
-    
-    EmojiListView(emojis: emojis)
-    
+    EmojiListView(emojis: [])
 }

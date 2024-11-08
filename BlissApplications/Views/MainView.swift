@@ -8,62 +8,48 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject var viewModel: EmojiListViewModel
+    @StateObject var viewModel: MainViewViewModel
+    @State private var selectedEmoji: EmojiCache?
     
-    @State private var selectedEmoji: EmojiData?
-    @State private var goToEmojiList = false
-    @State private var goToAvatarList = false
-    @State private var goToRepoList = false
-
-    @State private var hideRandomEmoji = false
-
     var body: some View {
-        ZStack {
-            Color(.accent).ignoresSafeArea()
-
-            VStack(spacing: 16) {
+        NavigationView{
+            ZStack {
+                Color(.background).ignoresSafeArea()
+                VStack(spacing: 16) {
+                    
+                    if let emoji = selectedEmoji {
+                        EmojiImage(emoji: emoji)
+                            .padding()
+                    }
+                    
+                    TextNavigationLink(title: "Random Emoji").onTapGesture {
+                        selectedEmoji = viewModel.getRandomEmoji()
+                    }
                 
-                if let emoji = selectedEmoji, !hideRandomEmoji {
-                    EmojiImage(emoji: emoji)
-                        .padding()
+                    NavigationLink(destination:  EmojiListView(emojis: viewModel.emojis)) {
+                        TextNavigationLink(title: "Emoji List")
+                    }
+                    
+                    RoundTextField(text: $viewModel.searchText, placeholder: "Search by username", onClick: {
+                        viewModel.getAvatar()
+                    })
+                    
+                    NavigationLink(destination:  AvatarListView()) {
+                        TextNavigationLink(title: "Avatar List")
+                    }
+                    
+                    NavigationLink(destination:  RepositoryListView()) {
+                        TextNavigationLink(title: "Repository List")
+                    }
                 }
-                
-                RoundButton(title: "Random Emoji") {
-                    selectedEmoji = viewModel.getRandomEmoji()
-                }
-                
-                RoundButton(title: "Emoji List") {
-                    goToEmojiList.toggle()
-                    hideRandomEmoji.toggle()
-                }
-                
-                RoundTextField(text: $viewModel.searchText, placeholder: "Search by username", onClick: {
-                    viewModel.getAvatar()
-                })
-                
-                RoundButton(title: "Avatar List") {
-                    goToAvatarList.toggle()
-                }
-                RoundButton(title: "Repo List") {
-                    goToRepoList.toggle()
-                }
-            }
-            .padding(.horizontal, 16)
-            .fullScreenCover(isPresented: $goToEmojiList) {
-                EmojiListView(emojis: viewModel.emojis)
-            }
-            .fullScreenCover(isPresented: $goToAvatarList) {
-                AvatarListView()
-            }
-            .fullScreenCover(isPresented: $goToRepoList) {
-                RepositoryListView()
+                .padding()
             }
         }
     }
 }
-
-#Preview {
-    MainView(viewModel: EmojiListViewModel())
-}
-
+    
+    #Preview {
+        MainView(viewModel: MainViewViewModel())
+    }
+    
     

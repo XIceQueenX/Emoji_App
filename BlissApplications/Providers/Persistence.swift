@@ -10,17 +10,6 @@ import Foundation
 import CoreData
 import Alamofire
 
-struct EmojiData  {
-    var name: String
-    var imageData: Data?
-}
-
-public struct Emoji: Codable {
-    let identification: String
-    let url: String
-}
-
-
 class PersistenceController {
     static let shared = PersistenceController()
     
@@ -29,6 +18,46 @@ class PersistenceController {
     }
     
     let container: NSPersistentContainer
+    /*static var preview: PersistenceController = {
+        let controller = PersistenceController(inMemory: true)
+        
+        // Create mock EmojiCache
+        let viewContext = controller.container.viewContext
+        
+        let emoji = EmojiCache(context: viewContext)
+        emoji.name = "Smile"
+        
+        // Save image data as mock (using system image here)
+        if let smileImage = UIImage(systemName: "smiley.fill") {
+            emoji.url = smileImage.pngData() // Convert the image to Data and assign to `url`
+        }
+        
+        // Save to Core Data
+        do {
+            try viewContext.save()
+        } catch {
+            fatalError("Unresolved error \(error), \(error.localizedDescription)")
+        }
+        
+        return controller
+    }()*/
+    
+    
+    static var preview: PersistenceController = {
+            let controller = PersistenceController(inMemory: true)
+
+                let myList = EmojiCache(context: controller.container.viewContext)
+                myList.name = "Test List"
+        
+                  
+        
+        do {
+            try controller.container.viewContext.save()
+        } catch {
+            fatalError("Unresolved error \(error), \(error.localizedDescription)")
+        }
+            return controller
+        }()
     
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "BlissApplications")
@@ -54,16 +83,18 @@ class PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
     }
     
-    public func getEmojis() async throws -> [EmojiData] {
+    public func getEmojis() async -> [EmojiCache]? {
         if let localEmojis = fetchEmojisFromDatabase(), !localEmojis.isEmpty {
-            return localEmojis.map { EmojiData(name: $0.name ?? "", imageData: $0.url) }
+            return localEmojis
         }
         
-        let emojisFromAPI = try await getEmojisFromAPI()
-        
-        let emojisFromCoreData = uploadEmojisToCoreData(emoji: emojisFromAPI)
-        return emojisFromCoreData?.map { EmojiData(name: $0.name ?? "", imageData: $0.url) } ?? []
+        if let emojisFromAPI = await getEmojisFromAPI(), !emojisFromAPI.isEmpty {
+            let emojisFromCoreData = await uploadEmojisToCoreData(emoji: emojisFromAPI)
+            return emojisFromCoreData
+        }
+        return nil
     }
+    
     
     public func fetchEmojisFromDatabase() -> [EmojiCache]? {
         let fetchRequest: NSFetchRequest<EmojiCache> = EmojiCache.fetchRequest()
@@ -72,21 +103,12 @@ class PersistenceController {
             let emojiCaches = try context.fetch(fetchRequest)
             return emojiCaches
         } catch {
-            print("Erro fetching emojis from core daqta")
+            print("Erro fetchEmojisFromDatabase \(error)")
             
             return nil
         }
     }
     
-    
-    public func getAvatars() async throws -> [AvatarData] {
-        if let localAvatars = fetchAvatarsFromDatabase(), !localAvatars.isEmpty {
-            return localAvatars.map { AvatarData(login: $0.login! ?? "", id: $0.id ?? "",  data: $0.data) }
-        }
-        return []
-    }
-    
-    //why not avatarDaTA????
     public func fetchAvatarsFromDatabase() -> [AvatarCache]? {
         let fetchRequest: NSFetchRequest<AvatarCache> = AvatarCache.fetchRequest()
         
@@ -94,7 +116,7 @@ class PersistenceController {
             let avatars = try context.fetch(fetchRequest)
             return avatars
         } catch {
-            print("Erro fetching emojis from core daqta")
+            print("Erro fetchAvatarsFromDatabase \(error.localizedDescription)")
             return nil
         }
     }
@@ -107,66 +129,64 @@ class PersistenceController {
             let results = try container.viewContext.fetch(fetchRequest)
             return !results.isEmpty
         } catch {
-            print("Error fetching avatars: \(error)")
+            print("Error doesAvatarExist \(error)")
             return false
         }
     }
     
-    func removeAvatar(avatar: AvatarData)  {
-            let fetchRequest: NSFetchRequest<AvatarCache> = AvatarCache.fetchRequest()
-            
-            fetchRequest.predicate = NSPredicate(format: "id == %@", avatar.id)
-            
-            do {
-                let fetchedAvatars = try context.fetch(fetchRequest)
-                
-                if let avatarToDelete = fetchedAvatars.first {
-                    context.delete(avatarToDelete)
-                    
-                    try context.save()
-                }
-            } catch {
-                print("Failed \(error)")
-            }
-        }
-    
-    public func uploadAvatarToCoreData(emoji: AvatarData) {
-        if doesAvatarExist(withId: emoji.id) {
-            return
-        }
+    func removeAvatar(avatar: AvatarCache)  {
+        guard let id = avatar.id else {return}
         
-        let newItem = AvatarCache(context: context)
-        newItem.id = emoji.id
-        newItem.login = emoji.login
-        newItem.data = emoji.data
+        let fetchRequest: NSFetchRequest<AvatarCache> = AvatarCache.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id)
         
         do {
-            try context.save()
+            let fetchedAvatars = try context.fetch(fetchRequest)
+            
+            if let avatarRemoved = fetchedAvatars.first {
+                context.delete(avatarRemoved)
+                
+                try context.save()
+            }
         } catch {
-            print("Erro uploading emojis to core daqta")
+            print("Failed removeAvatar \(error.localizedDescription)")
         }
     }
     
-    public func uploadEmojisToCoreData(emoji: [Emoji]) -> [EmojiCache]? {
+    
+    func uploadAvatarToCoreData(login: String, id: String, data: Data) {
+        let context = PersistenceController.shared.context
+        
+        if doesAvatarExist(withId: id) {
+            return
+        }
+        
+        let avatar = AvatarCache(context: context)
+        avatar.login = login
+        avatar.id = id
+        avatar.data = data
+        
+        do {
+            try context.save()
+        } catch {
+            print("Failed uploadAvatarToCoreData \(error.localizedDescription)")
+        }
+    }
+    
+    public func uploadEmojisToCoreData(emoji: [String: Data])  -> [EmojiCache]? {
         var emojis = [EmojiCache]()
         
-        for emojiItem in emoji {
-            let newItem = EmojiCache(context: context)
-            newItem.name = emojiItem.identification
-            
-            if let url = URL(string: emojiItem.url), let imageData = downloadImage(from: url) {
-                newItem.url = imageData
-            }else{
-                newItem.url = Data()
-            }
-            
-            emojis.append(newItem)
+        for (key, value) in emoji {
+            let emoji = EmojiCache(context: context)
+            emoji.name = key
+            emoji.url = value
+            emojis.append(emoji)
         }
         
         do {
             try context.save()
         } catch {
-            print("Erro uploading emojis to core daqta")
+            print("Erro uploadEmojisToCoreData \(error.localizedDescription)")
             return nil
         }
         

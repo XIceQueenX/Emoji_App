@@ -6,8 +6,9 @@
 //
 
 import Foundation
+
 class AvatarListViewModel : ObservableObject{
-    @Published var avatars = [AvatarData]()
+    @Published var avatars = [AvatarCache]()
     
     private let persistenceController = PersistenceController.shared
     
@@ -16,15 +17,14 @@ class AvatarListViewModel : ObservableObject{
     }
     
     func loadAvatar() {
-        Task {
-            do {
-                let fetchedEmojis = try await persistenceController.getAvatars()
+        do {
+            if let fetchedEmojis =  persistenceController.fetchAvatarsFromDatabase(), !fetchedEmojis.isEmpty{
                 DispatchQueue.main.async {
                     self.avatars = fetchedEmojis
                 }
-            } catch {
-                print("failed")
             }
+        } catch {
+            print("failed")
         }
     }
     

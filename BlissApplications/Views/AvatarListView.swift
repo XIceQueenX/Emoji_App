@@ -9,13 +9,9 @@ import SwiftUI
 
 struct AvatarListView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var viewModel: AvatarListViewModel
+    @StateObject private var viewModel: AvatarListViewModel = AvatarListViewModel()
     
-    public init() {
-        _viewModel = StateObject(wrappedValue: AvatarListViewModel())
-    }
-    
-    let squareSize: CGFloat = 50
+    let squareSize: CGFloat = 80
     let numberOfColumns = 4
     
     var columns: [GridItem] {
@@ -23,33 +19,41 @@ struct AvatarListView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ScrollView {
-                LazyVGrid(columns: self.columns) {
-                    ForEach(viewModel.avatars.indices, id: \.self) { index in
-                        if let imageData = viewModel.avatars[index].data, let uiImage = UIImage(data: imageData) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: squareSize, height: squareSize)
-                                .onTapGesture {
-                                    viewModel.removeItem(index: index)
-                                }
-                        } else {
-                            Text("No Image")
-                                .frame(width: squareSize, height: squareSize)
+        ZStack {
+            Color(.background).ignoresSafeArea()
+            if viewModel.avatars.isEmpty{
+                Text("No data")
+            }
+            else{
+                ScrollView {
+                    LazyVGrid(columns: self.columns) {
+                        ForEach(viewModel.avatars.indices, id: \.self) { index in
+                            if let imageData = viewModel.avatars[index].data, let uiImage = UIImage(data: imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: squareSize, height: squareSize)
+                                    .onTapGesture {
+                                        viewModel.removeItem(index: index)
+                                    }
+                            } else {
+                                Text("No Image")
+                                    .frame(width: squareSize, height: squareSize)
+                            }
                         }
                     }
+                    .padding()
                 }
-                .padding()
+                .navigationTitle(Text("Avatar List"))
             }
-            .navigationTitle("Avatar List")
-            .navigationBarItems(leading: Button("Back") {
-                dismiss()
-            })
         }
     }
 }
+
 #Preview {
+    let persistenceController = PersistenceController.shared
+    
     AvatarListView()
+        .environment(\.managedObjectContext, persistenceController.container.viewContext)
+    
 }

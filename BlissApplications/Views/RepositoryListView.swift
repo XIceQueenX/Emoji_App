@@ -13,50 +13,32 @@ struct RepositoryListView: View {
     
     var body: some View {
         ZStack{
-            Color(.accent).ignoresSafeArea()
-            NavigationView {
-                List {
-                    ForEach(viewModel.repositories.indices, id: \.self) { index in
-                        Text(viewModel.repositories[index].full_name)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(GeometryReader { geometry in
-                                Color.clear
-                                    .onChange(of: geometry.frame(in: .global).minY) { minY in
-                                        if index == viewModel.repositories.count - 1 {
-                                            let screenHeight = UIScreen.main.bounds.height
-                                            if minY < screenHeight {
-                                                isLastRowVisible = true
-                                            } else {
-                                                isLastRowVisible = false
-                                            }
-                                        }
-                                    }
-                            })
-                            .listRowSeparator(.hidden, edges: .all)
-                    }
+            Color(.background).ignoresSafeArea()
+            List {
+                ForEach(viewModel.repositories.indices, id: \.self) { index in
+                    Text(viewModel.repositories[index].full_name)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowBackground(Color.clear)
                     
-                    if viewModel.isLoading {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                            Spacer()
-                        }
-                        .padding()
+                    if index == viewModel.repositories.count - 1 && !viewModel.isLoading{
+                        Color.clear
+                            .onAppear {
+                                viewModel.fetchRepositories()
+                            }
                     }
                 }
-                .onAppear {
-                    viewModel.fetchRepositories()
-                }
-                .onChange(of: isLastRowVisible) { visible in
-                    if visible && !viewModel.isLoading {
-                        viewModel.fetchRepositories()
-                    }
-                }
-                .navigationTitle("Repositories")
+            }.listStyle(PlainListStyle())
+            .listRowBackground(Color.green)
+            .scrollContentBackground(.hidden)
+            
+            if viewModel.isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
             }
         }
+        .onAppear {
+            viewModel.fetchRepositories()
+        }.navigationTitle("Repositories")
     }
 }
 
